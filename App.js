@@ -20,16 +20,19 @@ import {
 	
 } from 'react-native';
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
-const CMD_ENROLL=7 // enroll data to host
-const CMD_CAPTURE=8 // capture data to host
-const CMD_ENROLL_IN_MODULE=2//enroll data in module
-const CMD_SEARCH_IN_MODULE=4//capture data in module
-const CMD_CLEAR_IN_MODULE=6 //clear all finger in module
-const CMD_GETSN=16
 const {FPModule} = NativeModules
-const delay=(time) =>{
-    return new Promise((resolve) => setTimeout(resolve, time))
-}
+
+const CMD_ENROLL=7 // enroll finger to host
+const CMD_CAPTURE=8 // capture finger to host
+const CMD_ENROLL_IN_MODULE=2//enroll finger in module
+const CMD_SEARCH_IN_MODULE=4//capture finger in module
+const CMD_CLEAR_IN_MODULE=6 //clear all finger in module
+
+/*
++cmd_id: mã lệnh
++data: mảng dữ liệu
++len: chiều dài mảng data
+*/
 const creatCmd=(cmd_id,data,len)=>{
 	let cmd = Buffer.alloc(9+len)
 	cmd[0]=70
@@ -53,7 +56,16 @@ const creatCmd=(cmd_id,data,len)=>{
 	return cmd
 
 }
+/*
++id: id của vân tay muốn đăng kí
+*/
+const creatEnrollCmd=(id)=>{
+	return creatCmd(CMD_ENROLL_IN_MODULE,[id&0xff,(id>>8)&0xff],2)
+}
 
+const creatCaptureCmd=()=>{
+	return creatCmd(CMD_SEARCH_IN_MODULE,[],0)
+}
 const requestBluetoothPermission = async () => {
 	if(Platform.OS==='android')
 	{
@@ -282,7 +294,7 @@ const App = (props) => {
 			}
 			//enroll with custom id 
 			let len = refFinger.length
-			let cmd = creatCmd(CMD_ENROLL_IN_MODULE,[len&0xff,(len>>8)&0xff],2)
+			let cmd = creatEnrollCmd(len)
 			let res=await device.write(cmd,'hex')
 			console.log('result enroll finger:',res)
 			addNewMess('enroll event, place finger twice!')
@@ -299,7 +311,7 @@ const App = (props) => {
 			if(!connection){
 				return alert('Please link device!')
 			}
-			let cmd = creatCmd(CMD_SEARCH_IN_MODULE,[],0)
+			let cmd = creatCaptureCmd()
 			let res=await device.write(cmd,'hex')
 			console.log('result capture finger:',res)
 			addNewMess('capture event, please place finger!')
@@ -313,12 +325,10 @@ const App = (props) => {
 		// console.log('raw data:',data)
 		let dt = Buffer.from(data.data,'utf8')
 		console.log('received data from device:',dt.length)
-		// console.log(dt)
 		if(dt.length>8 && dt[0]==70 && dt[1]==84)
 		{
 			let cmdTotal = (dt[5]&0xFF)+(dt[6]<<8&0XFF00)+9
 			if(dt.length<cmdTotal){
-				// addNewMess('receiced data error!')
 				return
 			}
 			//handle enroll data
@@ -345,17 +355,11 @@ const App = (props) => {
 					for(let i=0;i<size;i++){
 						capData[i]=dt[i+8]
 					}
-					// let capData = dt.slice(8,size+8)
-					// console.log('new ref len:',capData.length)
 					addNewMess('capture success,len='+capData.length)
 					try{
 						let match=false
 						let capBase =capData.toString('base64')
 						for(let i=0;i<refFinger.length;i++){
-							// let refBase = Buffer.from(refFinger[i],'base64')
-							
-							// console.log(refFinger[i])
-
 							let matchCore = await FPModule.MatchTemplate(refFinger[i],capBase)
 							console.log('match core:',matchCore)
 							if(matchCore>80){
@@ -380,7 +384,6 @@ const App = (props) => {
 					addNewMess('capture finger failed!')
 				}
 			}
-
 			//handle enroll in module data
 			else if(dt[4]==CMD_ENROLL_IN_MODULE)
 			{
@@ -405,11 +408,6 @@ const App = (props) => {
 				
 			}
 		}
-		// else{
-		// 	let str = new Date().toLocaleString()+': receiced data error!'
-		// 	addNewMess(str)
-
-		// }
 	}
 	
 	return (
