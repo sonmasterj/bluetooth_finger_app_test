@@ -210,16 +210,23 @@ const App = (props) => {
 		{
 			try{
 				setIsLoading(true)
-				let granted=await requestBluetoothPermission() 
-				if(!granted){
-					return alert('Please accept permission bluetooth!')
+				let version = Platform.Version;
+				console.log('version:',version);
+				if(version>30){
+					let granted=await requestBluetoothPermission() 
+					if(!granted){
+						setIsLoading(false)
+						return alert('Please accept permission bluetooth!')
+					}
 				}
+
 				let newDevice=device
 				if(!newDevice){
 					let bonded = await RNBluetoothClassic.getBondedDevices()
 					// console.log('list device found:',bonded)
 					let index = bonded.findIndex(el=>el.name.includes('SHBT20')===true)
 					if(index<0){
+						setIsLoading(false)
 						return alert('Please pair bluetooth fingerprint device!')
 					}
 					setDevice(bonded[index])
@@ -237,7 +244,7 @@ const App = (props) => {
 					setConnection(res)
 					setIsLoading(false)
 					if(!res){
-						
+						setIsLoading(false)
 						return alert('Error connecting with device!')
 					}
 					console.log('connected with device')
@@ -395,7 +402,7 @@ const App = (props) => {
 				addNewMess('enroll success,id finger='+id)
 
 			}
-			//handle enroll in module data
+			//handle caprute in module data
 			else if(dt[4]==CMD_SEARCH_IN_MODULE)
 			{
 				let id = dt[8] + (dt[9] << 8 & 0xFF00);
