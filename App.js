@@ -20,7 +20,6 @@ import {
 	
 } from 'react-native';
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
-const {FPModule} = NativeModules
 
 const CMD_ENROLL=7 // enroll finger to host
 const CMD_CAPTURE=8 // capture finger to host
@@ -180,7 +179,7 @@ const App = (props) => {
 
 	const checkBluetoothEnable=async()=>{
 		try {
-			let res =await FPModule.initMatch()
+			// let res =await FPModule.initMatch()
 			console.log('res match init:',res)
 			let enabled = await RNBluetoothClassic.isBluetoothEnabled();
 			console.log(` Status bluetooth: ${enabled}`);
@@ -363,27 +362,27 @@ const App = (props) => {
 						capData[i]=dt[i+8]
 					}
 					addNewMess('capture success,len='+capData.length)
-					try{
-						let match=false
-						let capBase =capData.toString('base64')
-						for(let i=0;i<refFinger.length;i++){
-							let matchCore = await FPModule.MatchTemplate(refFinger[i],capBase)
-							console.log('match core:',matchCore)
-							if(matchCore>80){
-								addNewMess('match finger success,index='+i)
-								match=true
-								break
-							}
-						}
-						if(!match){
-							addNewMess('No finger matched')
-						}
+					// try{
+					// 	let match=false
+					// 	let capBase =capData.toString('base64')
+					// 	for(let i=0;i<refFinger.length;i++){
+					// 		let matchCore = await FPModule.MatchTemplate(refFinger[i],capBase)
+					// 		console.log('match core:',matchCore)
+					// 		if(matchCore>80){
+					// 			addNewMess('match finger success,index='+i)
+					// 			match=true
+					// 			break
+					// 		}
+					// 	}
+					// 	if(!match){
+					// 		addNewMess('No finger matched')
+					// 	}
 
-					}
-					catch(err){
-						addNewMess('error match finger!')
-						console.log('error match finger:'+err.toString())
-					}
+					// }
+					// catch(err){
+					// 	addNewMess('error match finger!')
+					// 	console.log('error match finger:'+err.toString())
+					// }
 					
 					
 				}
